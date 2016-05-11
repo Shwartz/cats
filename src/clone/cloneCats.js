@@ -63,7 +63,7 @@ define(()=> {
         }
 
         function apply(...args) {
-            let iterate = (obj)=> args.map(arg=>arg(obj)((children)=>iterate(children))).filter(arg=>!isNone(arg))[0];
+            let iterate = (obj)=> args.map(arg=>arg(obj)((children)=>iterate(children))).filter(item=>!isNone(item))[0];
             return iterate;
         };
 
