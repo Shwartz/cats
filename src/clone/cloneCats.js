@@ -62,16 +62,12 @@ define(()=> {
             return (item)=> type(item) ? action(item) : ()=>None();
         }
 
+
         function apply(...args) {
             let iterate = (obj)=> args.map(arg=>arg(obj)((children)=>iterate(children))).filter(item=>!isNone(item))[0];
             return iterate;
         };
 
-        function clone(obj) {
-            return apply(functor(isSimple, applySimple), functor(isArray, applyArray), functor(isDate, applyDate), functor(isObject, applyObj))(obj);
-            throw new Error("Unable to copy obj! Its type isn't supported.");
-        }
-
-        return clone;
+        return apply(functor(isSimple, applySimple), functor(isArray, applyArray), functor(isDate, applyDate), functor(isObject, applyObj));
     }
 );
