@@ -54,6 +54,6 @@ define(()=> {
         let functor = (type, action) => item=> type(item) ? action(item) : new None();
         let iterate = (list, fn)=> (obj)=> fn(list, obj)(children=>iterate(list, fn)(children));
 
-        return obj=> iterate(new List(functor(isSimple, applySimple), functor(isArray, applyArray), functor(isDate, applyDate), functor(isObject, applyObj)), (list, obj)=>getOrElse(list, obj))(obj);
+        return obj=> iterate(new List(functor(isSimple, applySimple), functor(isArray, applyArray), functor(isDate, applyDate), functor(isObject, applyObj)), (list, children)=>getOrElse(list, children))(obj);
     }
 );
