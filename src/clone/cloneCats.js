@@ -3,38 +3,46 @@
  */
 define(()=> {
         'use strict';
-        function None() {
-            return {
-                toString(){
-                    return 'none';
-                }
+        class None extends Object {
+            toString() {
+                return '[object None]';
+            }
+        }
+
+        class List {
+            constructor(...fns) {
+                let list = [()=>new None()];
+                fns.forEach(fn=> {
+                    list = [fn, list.slice()];
+                })
+                return list
             };
         }
 
         function isNone(obj) {
-            return obj.toString && obj.toString() === 'none';
-        }
+            return obj.toString && obj.toString() === '[object None]';
+        };
 
         function isSimple(obj) {
             return typeof obj == 'boolean' || null == obj || 'object' != typeof obj;
-        }
+        };
 
         function isDate(obj) {
-            return obj instanceof Date;
-        }
+            return Object.prototype.toString.call(obj) === '[object Date]';
+        };
 
         function isArray(obj) {
-            return obj instanceof Array;
-        }
+            return Object.prototype.toString.call(obj) === '[object Array]';
+        };
 
         function isObject(obj) {
-            return obj instanceof Object;
-        }
+            return Object.prototype.toString.call(obj) === '[object Object]';
+        };
 
 
         function applySimple(simple) {
             return ()=> simple
-        }
+        };
 
         function applyDate(date) {
             return ()=> {
@@ -43,9 +51,10 @@ define(()=> {
                 return copy
             }
         };
+
         function applyArray(arr) {
             return (fn)=> arr.map(node=>fn(node));
-        }
+        };
 
         function applyObj(obj) {
             return (fn)=> {
@@ -58,16 +67,23 @@ define(()=> {
         };
 
 
-        function functor(type, action) {
-            return (item)=> type(item) ? action(item) : ()=>None();
-        }
-
-
-        function apply(...args) {
-            let iterate = (obj)=> args.map(arg=>arg(obj)((children)=>iterate(children))).filter(item=>!isNone(item))[0];
-            return iterate;
+        function getOrElse(list, obj) {
+            if (list) {
+                let result = list[0](obj);
+                return !isNone(result) ? result : getOrElse(list[1], obj)
+            }
         };
 
-        return apply(functor(isSimple, applySimple), functor(isArray, applyArray), functor(isDate, applyDate), functor(isObject, applyObj));
+        function functor(type, action) {
+            return (item)=> {
+                return type(item) ? action(item) : new None();
+            }
+        }
+
+        function iterate(list, fn) {
+            return (obj)=> fn(list, obj)(children=>iterate(list, fn)(children));
+        }
+
+        return obj=> iterate(new List(functor(isSimple, applySimple), functor(isArray, applyArray), functor(isDate, applyDate), functor(isObject, applyObj)), (list, obj)=>getOrElse(list, obj))(obj);
     }
 );
