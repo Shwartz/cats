@@ -3,57 +3,72 @@
  */
 define(()=> {
         'use strict';
+        // defining none for empty placement (null, false, undefined or -1 can be part of object
         class None {
             toString() {
                 return '[object None]';
             }
         }
+        // shortcut for avoiding new
+        let none = ()=> new None();
 
+        // list class will take a list of functors, and execute them
         class List {
             constructor(...fns) {
-                let list = [()=>new None()];
-                fns.forEach(fn=> {
-                    list = [fn, list.slice()];
-                })
-                return list
+                // split the head and tail pass to new list
+                this.head = fns[0];
+                var slice = fns.slice(1);
+                this.tail = slice.length > 0 ? list(...slice) : none();
+            };
+
+            getOrElse(obj) {
+                //take functor and executes returnin none or some
+                let head = this.head,
+                    tail = this.tail,
+                    result = head(obj);
+                return !isNone(result) ? result : tail.getOrElse(obj)
+            };
+
+            iterate(obj) {
+                // iterate function will iterate over object childrens
+                return this.getOrElse(obj)(children=>this.iterate(children))
             };
         }
+        let list = (...fns)=>new List(...fns);
 
-        let isNone = (obj)=> obj.toString && obj.toString() === '[object None]';
-        let isSimple = (obj)=> typeof obj == 'boolean' || null == obj || 'object' != typeof obj;
-        let isDate = (obj)=> Object.prototype.toString.call(obj) === '[object Date]';
-        let isArray = (obj)=> Object.prototype.toString.call(obj) === '[object Array]';
-        let isObject = (obj)=> Object.prototype.toString.call(obj) === '[object Object]';
+        //functor taking guard and doing action
+        let functor = (guard, action) => item=> guard(item) ? action(item) : none();
 
-        let applySimple = (simple)=> ()=> simple;
+        //Guards
+        let isNone = (obj)=> obj.toString && obj.toString() === '[object None]',
+            isSimple = (obj)=> typeof obj == 'boolean' || null == obj || 'object' != typeof obj,
+            isDate = (obj)=> Object.prototype.toString.call(obj) === '[object Date]',
+            isArray = (obj)=> Object.prototype.toString.call(obj) === '[object Array]',
+            isObject = (obj)=> Object.prototype.toString.call(obj) === '[object Object]';
 
-        let applyDate = (date)=> ()=> {
-            let copy = new Date();
-            copy.setTime(date.getTime());
-            return copy
-        };
+        // Cloning actions, for different types
+        let cloneSimple = (simple)=> ()=> simple,
+            cloneDate = (date)=> ()=> {
+                let copy = new Date();
+                copy.setTime(date.getTime());
+                return copy
+            },
+            cloneArray = (arr)=> (fn)=> arr.map(node=>fn(node)),
+            cloneObj = (obj)=> (fn)=> {
+                let copy = {};
+                Object.keys(obj).forEach(attr=> {
+                    copy[attr] = fn(obj[attr]);
+                })
+                return copy;
+            };
+        // Define functors, with guards and actions
+        let simpleFunctor = functor(isSimple, cloneSimple),
+            arrayFunctor = functor(isArray, cloneArray),
+            dateFunctor = functor(isDate, cloneDate),
+            objectFunctor = functor(isObject, cloneObj);
+        //take all functors in a list.
+        let functors =list(simpleFunctor, arrayFunctor, dateFunctor, objectFunctor);
 
-        let applyArray = (arr)=> (fn)=> arr.map(node=>fn(node));
-
-        let applyObj = (obj)=> (fn)=> {
-            let copy = {};
-            Object.keys(obj).forEach(attr=> {
-                copy[attr] = fn(obj[attr]);
-            })
-            return copy;
-        };
-
-
-        let getOrElse = (list, obj) => {
-            if (list) {
-                let result = list[0](obj);
-                return !isNone(result) ? result : getOrElse(list[1], obj)
-            }
-        };
-
-        let functor = (type, action) => item=> type(item) ? action(item) : new None();
-        let iterate = (list, fn)=> (obj)=> fn(list, obj)(children=>iterate(list, fn)(children));
-
-        return obj=> iterate(new List(functor(isSimple, applySimple), functor(isArray, applyArray), functor(isDate, applyDate), functor(isObject, applyObj)), (list, children)=>getOrElse(list, children))(obj);
-    }
-);
+        //take object and iterate over the list of functors
+        return obj=> functors.iterate(obj);
+    });
