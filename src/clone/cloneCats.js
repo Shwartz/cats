@@ -29,9 +29,9 @@ define(()=> {
                 return !isNone(result) ? result : tail.getOrElse(obj)
             };
 
-            iterate(obj) {
-                // iterate function will iterate over object childrens
-                return this.getOrElse(obj)(children=>this.iterate(children))
+            traverse(obj) {
+                // traverse function will traverse over object childrens
+                return this.getOrElse(obj)(children=>this.traverse(children))
             };
         }
         let list = (...fns)=>new List(...fns);
@@ -69,6 +69,6 @@ define(()=> {
         //take all functors in a list.
         let functors =list(simpleFunctor, arrayFunctor, dateFunctor, objectFunctor);
 
-        //take object and iterate over the list of functors
-        return obj=> functors.iterate(obj);
+        //take object and traverse over the list of functors
+        return obj=> functors.traverse(obj);
     });
