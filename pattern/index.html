@@ -95,7 +95,7 @@ Because of service workers, we will reload page instead of keepin all scripts in
         let content = container('.content');
 
         //Subscribe to global eventBus, and apply data as string to container
-        evtBus.subscribe('content', (content) => content.addTemplate(template(content)));
+        evtBus.subscribe('content', (resp) => content.addTemplate(template(resp)));
 
         // There is interesting, We subscribe one click event to parent container.
         // Means, we not need add and remove events on content changes.
