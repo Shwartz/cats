@@ -12,14 +12,15 @@ Service workers will manipulate data, Only DOM manipulation logic will be there.
 Animations CSS.
 Because of service workers, we will reload page instead of keepin all scripts in single page.
 -->
-<script src="src/Mediator.js"></script>
-<script src="src/DOM.js"></script>
 <!--Global Initialisation-->
+<script src="dist/main.js"></script>
+
 <script>
     (root => {
-        let {Mediator} = root;
+        let {Mediator, swRun} = root.utils;
         /*Global is only eventBus, everything else we handle locally*/
-        root.evtBus = new Mediator()
+        swRun();
+        root.utils.evtBus = new Mediator();
     })(window)
 </script>
 <p>
@@ -55,7 +56,7 @@ Because of service workers, we will reload page instead of keepin all scripts in
                     }
                 ]
             };
-            let {DOM, evtBus} = root,
+            let {DOM, evtBus} = root.utils,
                 {container} = DOM;
 
             let oneContent = container('.oneContent'),
@@ -70,7 +71,7 @@ Because of service workers, we will reload page instead of keepin all scripts in
     <span class="placeholderPrice"></span>
     <script>
         (root => {
-            let {DOM, evtBus} = root,
+            let {DOM, evtBus} = root.utils,
                 {container} = DOM;
 
             let placeholderName = container('.placeholderName'),
@@ -88,7 +89,7 @@ Because of service workers, we will reload page instead of keepin all scripts in
         //Just basic template to covert Array to list
         let template = (data) => data.map(item => `<li><strong class="name">${item.name}</strong> :<span class="price">${item.price}</span></li>`).join('\n');
         // Initialise Mediator and define useful variables
-        let {DOM, evtBus} = root,
+        let {DOM, evtBus} = root.utils,
             {container, select} = DOM;
 
         //Create Container by using selector. Currently selector is global, there is some ways, to compose them, and use as locals
