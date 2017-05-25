@@ -856,8 +856,8 @@ app.use((req, res, next) => {
         .catch(() => next());
 });
 
-app.get('/hello', (req, res) => {
-    res.send('hello');
+app.get('/:id', (req, res) => {
+    res.send(req.params.id);
 });
 
 app.listen(3000, () => {
