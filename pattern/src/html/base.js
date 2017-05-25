@@ -5,10 +5,11 @@ let addScript = (scripts = []) => scripts.map(script => `<script src="${script}"
 <head>
     <meta charset="UTF-8">
     <title>Javascrript modifying html pattern</title>
-    ` + addScript(scripts) + `
-    ` + addCss(css) + `
+    ${addScript(scripts)}
+    ${addCss(css)}
 </head>
 <body>
+<p><a href="/test">Test</a> : <a href="/testa">TestA</a></p>
 ${body}
 </body>`;
 

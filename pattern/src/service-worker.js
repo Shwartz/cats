@@ -4,7 +4,6 @@ let CACHE_VERSION = 2,
         prefetch: `window-cache-v ${CACHE_VERSION}`
     },
     urlsToPrefetch = [
-        './index.html',
         './dist/main.js'
     ];
 

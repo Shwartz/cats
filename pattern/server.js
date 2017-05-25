@@ -1,5 +1,10 @@
-(function () {
 'use strict';
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var express = _interopDefault(require('express'));
+var path = require('path');
+require('url');
 
 let some = (value) => new Some(value);
 let none = () => new None();
@@ -770,7 +775,7 @@ Because of service workers, we will reload page instead of keepin all scripts in
 /**
  * Created by guntars on 25/05/2017.
  */
-let parsePath = (path) => path.split('/');
+let parsePath = (path$$1) => path$$1.split('/');
 class Router {
     constructor(df) {
         this._default = df;
@@ -779,26 +784,26 @@ class Router {
 
     };
 
-    get(path, cb) {
-        return this.addRequest(path, 'GET', cb);
+    get(path$$1, cb) {
+        return this.addRequest(path$$1, 'GET', cb);
     };
 
-    post(path, cb) {
-        return this.addRequest(path, 'POST', cb);
+    post(path$$1, cb) {
+        return this.addRequest(path$$1, 'POST', cb);
     };
 
-    delete(path, cb) {
-        return this.addRequest(path, 'DELETE', cb);
+    delete(path$$1, cb) {
+        return this.addRequest(path$$1, 'DELETE', cb);
     };
 
-    put(path, cb) {
-        return this.addRequest(path, 'PUT', cb);
+    put(path$$1, cb) {
+        return this.addRequest(path$$1, 'PUT', cb);
     };
 
-    addRequest(path, method, cb) {
-        let chunks = parsePath(path);
+    addRequest(path$$1, method, cb) {
+        let chunks = parsePath(path$$1);
         let route = {
-            path,
+            path: path$$1,
             chunks,
             method,
             cb
@@ -837,75 +842,31 @@ let routes = router();
 routes.get('/test', () => task(() => base(test())));
 routes.get('/testa', () => task(() => base(testA())));
 
-/**
- * Created by guntars on 24/05/2017.
- */
-let combineHeaders = (source = {}, target = {}) => Object.assign({}, source, target, {headers: Object.assign({}, source.headers, target.headers)});
-let htmlHeader = (extra = {}) => combineHeaders({
-        status:     200,
-        statusText: 'OK',
-        headers:    {
-            'Content-Type':     'text/html',
-            'X-Local-Response': 'yes'
-        }
-    }, extra);
+const app = express();
 
-let standartResponse = evt => task(evt).map(async e => {
-    let response = await caches.match(e.request);
-    return response || await fetch(e.request);
-});
+app.use('/dist', express.static(path.join(__dirname, 'dist')));
+app.use('/service-worker.js', express.static(__dirname + '/service-worker.js'));
+app.use('/products.json', express.static(__dirname + '/products.json'));
 
-
-let triggerRoute = (evt, res) => {
-    let {request} = evt;
-    let {pathname} = new URL(request.url);
+app.use((req, res, next) => {
     routes.trigger({
-        path:   pathname,
-        method: request.method
+        path:   req.originalUrl,
+        method: req.method
     })
-        .then(cb => res(cb(evt).map(responseBody => new Response(responseBody, htmlHeader()))))
-        .catch(() => res(standartResponse(evt)));
-};
-
-let response = event => task(event).flatMap((evt, res) => triggerRoute(evt, res));
-
-let CACHE_VERSION = 2;
-let CURRENT_CACHES = {
-        prefetch: `window-cache-v ${CACHE_VERSION}`
-    };
-let urlsToPrefetch = [
-        './dist/main.js'
-    ];
-
-
-self.addEventListener('install', (event) => {
-    console.log('Install event:', event);
-    event.waitUntil(
-        caches.open(CURRENT_CACHES.prefetch)
-            .then(cache => cache.addAll(urlsToPrefetch)
-                .then(() => self.skipWaiting()))
-            .catch(error => console.error('Pre-fetching failed:', error)));
+        .then(async cb => {
+            let resp = await cb().unsafeRun();
+            res.send(resp);
+        })
+        .catch(() => next());
 });
 
-self.addEventListener('activate', (event) => {
-    console.log('Activate event:', event);
-    self.clients.claim();
-    let expectedCacheNames = Object.keys(CURRENT_CACHES).map(key => CURRENT_CACHES[key]);
-    event.waitUntil(
-        caches.keys()
-            .then(cacheNames => Promise.all(
-                cacheNames.map(cacheName => {
-                    if (expectedCacheNames.indexOf(cacheName) === -1) {
-                        console.log('Deleting out of date cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            )));
+app.use('/dist', express.static('dist'));
+
+app.get('/hello', (req, res) => {
+    res.send('hello');
 });
 
-self.addEventListener('fetch', event => {
-    console.log('Handling fetch event for', event.request.url);
-    event.respondWith(response(event).unsafeRun());
-});
 
-}());
+app.listen(3000, () => {
+    console.log('Example app listening on port 3000!');
+});
